@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  # Cơ sở dữ liệu (PostgreSQL + TimescaleDB)
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: landslide_db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin 
+      - POSTGRES_DB=landslide_db # DB trắng sẽ tự động được tạo
+    ports:
+      - "5432:5432" # Mở cổng 5432 ra localhost để DBeaver kết nối
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+
+# Khai báo Volume để dữ liệu không bị mất khi bạn tắt máy/xóa container
+volumes:
+  timescaledb_data:
