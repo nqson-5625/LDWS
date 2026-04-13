@@ -9,6 +9,11 @@ class Settings(BaseSettings): # class Settings kế thừa từ BaseSettings -> 
     database_url: str
     debug: bool 
 
+    jwt_secret_key: str # Khóa bí mật dùng để sign và verify JWT
+    jwt_algorithm: str  # Thuật toán dùng để mã hóa JWT
+    jwt_access_token_expire_minutes: int    # Thời gian sống của access token 
+                                            # Sau thời gian này, user phải login lại hoặc refresh token
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

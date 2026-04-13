@@ -1,6 +1,6 @@
 from fastapi import APIRouter # Dùng để tách Router thành module riêng
 
-router = APIRouter(prefix="/health", tags=["health"]) #prefix="/health" tất cả API trong file sẽ tự động có thêm /health phía trước
+router = APIRouter(prefix="/v1/health", tags=["health"]) #prefix="/health" tất cả API trong file sẽ tự động có thêm /health phía trước
                                                       #tags=["health"]  nhóm API trong Swagger API (docs)
 @router.get("/") # Định nghĩa API GET
 
