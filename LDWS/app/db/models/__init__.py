@@ -1,14 +1,14 @@
-from app.db.models.area import Area
-from app.db.models.station import Station
-from app.db.models.user import User
-from app.db.models.sensor_type import SensorType
-from app.db.models.sensor import Sensor
-from app.db.models.telegram_channel import TelegramChannel
-from app.db.models.sensor_reading import SensorReading
-from app.db.models.derived_feature import DerivedFeature
-from app.db.models.alert_level import AlertLevel
-from app.db.models.alert_event import AlertEvent
-from app.db.models.alert_status import AlertStatus
+from app.db.models.core import (
+    Area, Station,
+    SensorType, Sensor,
+    TelegramChannel,
+    AlertLevel,
+    User
+)
+from app.db.models.raw import SensorReading
+from app.db.models.transformed import DerivedFeature
+from app.db.models.serving import AlertEvent, AlertStatus
+
 
 __all__ = [
     "Area",

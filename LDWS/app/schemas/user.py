@@ -27,3 +27,14 @@ class UserCreate(BaseModel):
     role: UserRole
     station_id: int | None = None
     is_active: bool = True
+
+# Model để super_admin update station_admin
+class UserUpdate(BaseModel):
+    username: str | None = None
+    password: str | None = None
+    station_id: int | None = None
+    is_active: bool | None = None
+
+# Model để super_admin update trạng thái của station_admin
+class UserStatusUpdate(BaseModel):
+    is_active: bool

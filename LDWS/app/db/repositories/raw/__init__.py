@@ -1,0 +1,1 @@
+from app.db.repositories.raw.sensor_reading_repository import SensorReadingRepository

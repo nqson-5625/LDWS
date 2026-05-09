@@ -1,6 +1,6 @@
 from typing import Annotated # Đính kèm thêm thông tin và khai báo kiểu dữ liệu
 
-from fastapi import Depends
+from fastapi import HTTPException, status, Depends
 from sqlalchemy.orm import Session
 
 from app.core.enums import UserRole
@@ -24,6 +24,11 @@ def get_current_active_user(
     # Bắt buộc chạy get_current_user() trước, lấy kết quả trả về cho current_user
     current_user=Depends(get_current_user)
 ):
+    if not current_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user"
+        )
     return current_user
 
 def get_current_super_admin(

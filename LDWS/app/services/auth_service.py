@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.enums import UserRole
 from app.core.security import create_access_token, decode_token, verify_password
-from app.db.repositories.user_repository import UserRepository
+from app.db.repositories import UserRepository
 
 class AuthService:
     def __init__(self, db: Session):
