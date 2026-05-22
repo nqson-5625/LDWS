@@ -22,24 +22,49 @@ class Settings(BaseSettings): # class Settings kế thừa từ BaseSettings -> 
     telegram_disable_notification: bool = False # Gửi im lặng hay kèm cảnh báo
     telegram_parse_mode: str = "HTML"
     telegram_delivery_state_file: str = "storage/telegram_delivery_logs/delivery_state.json"
+    
+    # Postgres Settings
+    postgres_host: str | None = None
+    postgres_port: int | None = None
+    internal_postgres_host: str | None = None
+    internal_postgres_port: int | None = None
+    postgres_user: str | None = None
+    postgres_password: str | None = None
+    postgres_db: str | None = None
 
-    # pipeline settings
-    pipeline_default_source: str = "simulated" # nguồn dữ liệu mặc định
-    pipeline_log_level: str = "INFO" # mức độ chi tiết của log
-    pipeline_checkpoint_dir: str = "storage/checkpoints" # đường dẫn đến nơi lưu các file checkpoint
-    pipeline_batch_size: int = 500 # số lượng bản ghi xử lý mỗi đợt (batch)
-
-    pipeline_default_csv_path: str = "storage/temp/sample_sensor_readings.csv"
-    pipeline_default_gateway_payload_path: str = "storage/temp/gateway_payload.json"
-    pipeline_default_api_url: str = "http://host.docker.internal:9001/mock-sensor-readings"
-
-    # Cấu hình lưu trữ MinIO: nơi hệ thống đẩy dữ liệu thô lên sau khi xử lý
-    minio_endpoint: str | None = None 
+    # MinIO Settings
+    minio_root_user: str | None = None
+    minio_root_password: str | None = None
+    minio_endpoint: str | None = None
+    internal_minio_endpoint: str | None = None
     minio_access_key: str | None = None
     minio_secret_key: str | None = None
-    minio_bucket_raw: str = "ldws-raw"
+    minio_bucket: str | None = None
+    minio_local_dir: str | None = None
 
-    airflow_enabled: bool = False
+    # Airflow DB Settings
+    airflow_db_user: str | None = None
+    airflow_db_password: str | None = None
+    airflow_db_name: str | None = None
+
+    # Airflow Webserver Settings
+    airflow_webserver_user: str | None = None
+    airflow_webserver_firstname: str | None = None
+    airflow_webserver_lastname: str | None = None
+    airflow_webserver_email: str | None = None
+    airflow_webserver_password: str | None = None
+
+    # Kafka Settings
+    kafka_bootstrap: str | None = None
+    kafka_group: str | None = None
+
+    # Snowflake Settings
+    snowflake_user: str | None = None
+    snowflake_password: str | None = None
+    snowflake_account: str | None = None
+    snowflake_warehouse: str | None = None
+    snowflake_db: str | None = None
+    snowflake_schema: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
