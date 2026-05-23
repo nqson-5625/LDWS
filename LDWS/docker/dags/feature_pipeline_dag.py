@@ -201,7 +201,7 @@ def compute_derived_features(**context):
             NULL::FLOAT,    -- anomaly_score
             false,          -- anomaly_flag
             NULL::FLOAT,    -- risk_score
-            NULL::VARCHAR   -- alert_level_candidate
+            NULL::SMALLINT   -- alert_level_candidate
 
         FROM rolling_rain rr
         -- Ráp cột mưa và cột snapshot lệch giờ lại với nhau
