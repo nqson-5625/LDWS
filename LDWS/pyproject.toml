@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.18.4",
+    "apache-airflow>=3.2.1",
     "bcrypt==4.0.1",
     "boto3>=1.43.14",
     "fastapi[standard]>=0.135.1",
@@ -19,5 +20,6 @@ dependencies = [
     "pyjwt>=2.12.1",
     "python-multipart>=0.0.22",
     "requests>=2.34.2",
+    "snowflake-connector-python>=4.5.0",
     "sqlalchemy>=2.0.48",
 ]
