@@ -162,6 +162,10 @@ create table if not exists derived_features (
 	constraint chk_derived_features_alert_level check (alert_level_candidate is null or alert_level_candidate in (1, 2, 3, 4, 5))
 );
 
+ALTER TABLE derived_features
+ADD CONSTRAINT uq_derived_features_station_time
+UNIQUE (station_id, "timestamp");
+
 select create_hypertable('derived_features', 'timestamp', if_not_exists => true);
 
 -- Các cấp cảnh báo
@@ -327,93 +331,3 @@ select add_compression_policy (
 	if_not_exists => true
 );
 
--- -- Continuous Aggregates
-
--- -- rain_hourly
--- drop materialized view if exists rain_hourly cascade;
--- create materialized view rain_hourly with (timescaledb.continuous) as
--- select 
--- 	time_bucket(interval '1 hours', "timestamp") as bucket, -- Làm tròn các mốc thời gian 1h
--- 	station_id,
--- 	sum(value_1) as rain_sum
--- from sensor_readings
--- where sensor_type = 'rain'
--- group by bucket, station_id
--- with no data; -- Chỉ tạo cấu trúc, không tính toán dữ liệu
-
--- select add_continuous_aggregate_policy (
--- 	'rain_hourly',
--- 	start_offset => interval '1 day', -- Nhìn lùi lại dữ liệu của 1 ngày qua xem có ai gửi dữ liệu trễ không để cập nhật lại
--- 	end_offset => interval '1 minute', -- Chỉ tính đến cách thời điểm hiện tại 1 phút
--- 	schedule_interval => interval '5 minutes', -- 5 phút tự động tính toán lại 1 lần
--- 	if_not_exists => true
--- );
-
--- -- features_hourly
--- drop materialized view if exists features_hourly cascade;
--- create materialized view features_hourly with (timescaledb.continuous) as
--- select 
--- 	time_bucket(interval '1 hour', "timestamp") as bucket,
--- 	area_id,
--- 	station_id,
-	
--- 	sum(value_1) filter (where sensor_type = 'rain') as rain_1h,
--- 	avg(value_1) filter (where sensor_type = 'rain') as rain_intensity,
-	
--- 	AVG(value_1) filter (where sensor_type = 'tilt') as tilt_value,
---     last(value_1, "timestamp") filter (WHERE sensor_type = 'tilt')
---       - first(value_1, "timestamp") filter (WHERE sensor_type = 'tilt') AS tilt_change,
---     first(value_1, "timestamp") filter (WHERE sensor_type = 'tilt') AS tilt_first_val,
---     last(value_1, "timestamp") filter (WHERE sensor_type = 'tilt') AS tilt_last_val,
-
---     AVG(value_1) filter (WHERE sensor_type = 'displacement') AS disp_value,
---     last(value_1, "timestamp") filter (WHERE sensor_type = 'displacement')
---       - first(value_1, "timestamp") filter (WHERE sensor_type = 'displacement') AS disp_change,
---     first(value_1, "timestamp") filter (WHERE sensor_type = 'displacement') AS disp_first_val,
---     last(value_1, "timestamp") filter (WHERE sensor_type = 'displacement') AS disp_last_val,
-
---     AVG(value_1) filter (WHERE sensor_type = 'vibration') AS vibration_value,
---     MAX(value_1) filter (WHERE sensor_type = 'vibration') AS vibration_peak,
---     AVG(value_1) filter (WHERE sensor_type = 'temperature') AS temperature_value
-
--- FROM sensor_readings
--- GROUP BY bucket, area_id, station_id
--- WITH NO DATA;
-
--- SELECT add_continuous_aggregate_policy(
---     'features_hourly',
---     start_offset => INTERVAL '1 day',
---     end_offset => INTERVAL '1 minute',
---     schedule_interval => INTERVAL '5 minutes',
---     if_not_exists => TRUE
--- );
-
--- -- features_daily
--- DROP MATERIALIZED VIEW IF EXISTS features_daily CASCADE;
--- CREATE MATERIALIZED VIEW features_daily
--- WITH (timescaledb.continuous) AS
--- SELECT
---     time_bucket(INTERVAL '1 day', bucket) AS day_bucket,
---     area_id,
---     station_id,
-
---     SUM(rain_1h) AS rain_24h,
---     AVG(rain_intensity) AS rain_intensity_avg,
-
---     last(tilt_last_val, bucket) - first(tilt_first_val, bucket) AS tilt_change_24h,
---     last(disp_last_val, bucket) - first(disp_first_val, bucket) AS disp_change_24h,
-
---     MAX(vibration_peak) AS vibration_peak_max,
---     AVG(temperature_value) AS temperature_avg
-
--- FROM features_hourly
--- GROUP BY day_bucket, area_id, station_id
--- WITH NO DATA;
-
--- SELECT add_continuous_aggregate_policy(
---     'features_daily',
---     start_offset => INTERVAL '7 days',
---     end_offset => INTERVAL '1 hour',
---     schedule_interval => INTERVAL '30 minutes',
---     if_not_exists => TRUE
--- );
