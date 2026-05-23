@@ -10,12 +10,14 @@ from datetime import datetime, timezone
 from sqlalchemy import text
 from pathlib import Path
 
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
 from app.db.session import SessionLocal
 from app.schemas.sensor_reading import SensorReadingCreate
 from app.services.sensor_reading_service import SensorReadingService
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
 
 # Logging
 logging.basicConfig(
