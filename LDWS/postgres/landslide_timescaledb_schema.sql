@@ -103,6 +103,8 @@ create table if not exists sensor_readings (
 	value_2 double precision,
 	value_3 double precision,
 	quality_flag smallint not null default 0,
+	-- Quality_flag: 0 = good, 1 = suspect, 2 = outlier, 3 = missing, 4 = interpolated
+
 	raw_payload jsonb,
 	created_at timestamptz not null default now(),
 	
