@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: raw
+    database: LANDSLIDE
+    schema: raw
+    description: "Raw data loaded from MinIO Parquet files via Debezium CDC"
+    tables:
+      - name: areas
+        description: "Khu vực quan trắc"
+      - name: stations
+        description: "Trạm quan trắc"
+      - name: sensors
+        description: "Cảm biến tại từng trạm"
+      - name: sensor_readings
+        description: "Dữ liệu thô time-series từ cảm biến"
+      - name: derived_features
+        description: "Đặc trưng dẫn xuất tính từ sensor_readings"
+      - name: alert_events
+        description: "Các sự kiện cảnh báo sạt lở"
+      - name: alert_status
+        description: "Trạng thái cảnh báo hiện tại của từng trạm"
