@@ -59,19 +59,6 @@ create table if not exists sensor_types (
 	created_at timestamptz not null default now()
 );
 
-insert into sensor_types (
-	type_code, type_name,
-	unit_1_name, unit_1_symbol,
-	unit_2_name, unit_2_symbol,
-	unit_3_name, unit_3_symbol
-)
-values 
-	('rain', 'Cảm biến lượng mưa', 'Lượng mưa', 'mm', NULL, NULL, NULL, NULL),
-    ('tilt', 'Cảm biến độ nghiêng', 'Trục X', 'độ', 'Trục Y', 'độ', NULL, NULL),
-    ('vibration', 'Cảm biến độ rung', 'Gia tốc X', 'g', 'Gia tốc Y', 'g', 'Gia tốc Z', 'g'),
-    ('displacement', 'Cảm biến dịch chuyển', 'Độ dời', 'mm', NULL, NULL, NULL, NULL),
-    ('temperature', 'Cảm biến nhiệt độ', 'Nhiệt độ', '°C', NULL, NULL, NULL, NULL)
-ON CONFLICT (type_code) DO NOTHING; -- Nếu UpSert mà conflict thì sẽ do nothing (không làm gì cả)
 
 create table if not exists sensors (
 	sensor_id bigserial primary key,
@@ -184,14 +171,6 @@ create table if not exists alert_levels (
 	description text
 );
 
-insert into alert_levels
-values 
-	(1, 'Rất thấp', 'blue', 'Trạng thái ổn định, nguy cơ rất thấp'),
-    (2, 'Thấp', 'green', 'Có dấu hiệu nhẹ, cần theo dõi'),
-    (3, 'Trung bình', 'yellow', 'Nguy cơ trung bình, cần giám sát chặt'),
-    (4, 'Cao', 'red', 'Nguy cơ cao, cần phát cảnh báo'),
-    (5, 'Rất cao', 'purple', 'Nguy cơ rất cao, cần cảnh báo khẩn')
-ON CONFLICT (alert_level) DO NOTHING;
 
 -- Các sự kiện cảnh báo (HyperTable)
 
