@@ -1,38 +1,50 @@
-import os
 import json
 import requests
-from dotenv import load_dotenv
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from app.core.config import settings
 
 
-load_dotenv()
-
-# Build connector JSON in memory
 connector_config = {
     "name": "postgres-connector",
     "config": {
         "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
-        "database.hostname": os.getenv("INTERNAL_POSTGRES_HOST"),
-        "database.port": os.getenv("INTERNAL_POSTGRES_PORT"),
-        "database.user": os.getenv("POSTGRES_USER"),
-        "database.password": os.getenv("POSTGRES_PASSWORD"),
-        "database.dbname": os.getenv("POSTGRES_DB"),
-        "topic.prefix": "banking_server",
-        "table.include.list": "public.customers,public.accounts,public.transactions",
-        "plugin.name": "pgoutput",
-        "slot.name": "banking_slot",
-        "publication.autocreate.mode": "filtered",
-        "tombstones.on.delete": "false",
-        "decimal.handling.mode": "double",
+
+        # Dùng internal host vì Debezium chạy trong Docker network
+        "database.hostname": settings.internal_postgres_host,
+        "database.port":     str(settings.internal_postgres_port),
+        "database.user":     settings.postgres_user,
+        "database.password": settings.postgres_password,
+        "database.dbname":   settings.postgres_db,
+
+        "topic.prefix":    "ldws_server",
+        "plugin.name":     "pgoutput",
+        "slot.name":       "ldws_slot",
+        "publication.autocreate.mode":  "filtered",
+        "tombstones.on.delete":         "false",
+        "decimal.handling.mode":        "double",
+
+        "table.include.list": ",".join([
+            "public.areas",
+            "public.stations",
+            "public.sensors",
+            "public.sensor_readings",
+            "public.derived_features",
+            "public.alert_events",
+            "public.alert_status",
+        ]),
     },
 }
 
-# Send request to Debezium Connect
 url = "http://localhost:8083/connectors"
 headers = {"Content-Type": "application/json"}
 
 response = requests.post(url, headers=headers, data=json.dumps(connector_config))
 
-# Debug/Output
 if response.status_code == 201:
     print("Connector created successfully!")
 elif response.status_code == 409:
