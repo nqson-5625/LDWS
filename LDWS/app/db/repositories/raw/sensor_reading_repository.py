@@ -85,7 +85,19 @@ class SensorReadingRepository:
             .where(SensorReading.sensor_id == sensor_id, SensorReading.timestamp == timestamp)
             .limit(1) # dừng ngay khi thấy bản ghi đầu tiên
         )
-        return self.db.execute(stmt).scalar_one_or_none() is not None
+        return self.db.execute(stmt).scalar_one_or_none() 
+    
+    # Thêm một bản ghi đơn lẻ
+    def create(self, *, reading_id: int, **kwargs) -> SensorReading:
+        objects = SensorReading(reading_id=reading_id, **kwargs)
+        try:
+            self.db.add(objects)
+            self.db.commit()
+            self.db.refresh(objects)
+            return objects
+        except Exception:
+            self.db.rollback()
+            raise
     
     # Thêm dữ liệu hàng loạt (Bulk Insert)
     def bulk_insert(self, rows: list[dict]) -> int:

@@ -1,8 +1,11 @@
 from datetime import datetime
+from select import select
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.schemas.sensor_reading import SensorReadingCreate
+from app.db.models.raw import SensorReading
 from app.core.enums import UserRole
 from app.db.repositories import SensorReadingRepository
 from app.permissions.station_scope import ensure_station_scope
@@ -54,3 +57,24 @@ class SensorReadingService:
         # Đảm bảo current user có quyền trên bản ghi này
         ensure_station_scope(current_user, reading.station_id)
         return reading
+    
+    def create_sensor_reading(self, payload: SensorReadingCreate) -> SensorReading:
+        # Idempotent: bỏ qua nếu đã có bản ghi trùng (sensor_id, timestamp)
+        if self.sensor_reading_repo.exists_for_sensor_timestamp(
+            sensor_id=payload.sensor_id,
+            timestamp=payload.timestamp,
+        ):
+            existing = self.db.execute(
+                select(SensorReading).where(
+                    SensorReading.sensor_id == payload.sensor_id,
+                    SensorReading.timestamp == payload.timestamp,
+                )
+            ).scalar_one_or_none()
+            return existing
+ 
+        next_id = self.sensor_reading_repo.get_max_reading_id() + 1
+ 
+        return self.sensor_reading_repo.create(
+            reading_id=next_id,
+            **payload.model_dump(),
+        )
