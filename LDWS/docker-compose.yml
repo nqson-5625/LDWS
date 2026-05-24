@@ -184,6 +184,8 @@ services:
       - ./docker/dags:/opt/airflow/dags
       - ./docker/logs:/opt/airflow/logs
       - ./docker/plugins:/opt/airflow/plugins
+      - C:/Users/FPT/.dbt:/home/airflow/.dbt
+      - ./landslide_dbt:/opt/airflow/landslide_dbt
     command: scheduler
 
   airflow-webserver:
@@ -219,6 +221,8 @@ services:
       - ./docker/dags:/opt/airflow/dags
       - ./docker/logs:/opt/airflow/logs
       - ./docker/plugins:/opt/airflow/plugins
+      - C:/Users/FPT/.dbt:/home/airflow/.dbt
+      - ./landslide_dbt:/opt/airflow/landslide_dbt
     ports:
       - "8080:8080"
     command: webserver
