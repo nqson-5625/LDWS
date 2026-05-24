@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.db.models import DerivedFeature
@@ -48,3 +48,31 @@ class DerivedFeatureRepository:
             .limit(limit)
         )
         return list(self.db.execute(stmt).scalars().all())
+    
+    def get_latest_by_station(self, station_id: int) -> DerivedFeature | None:
+        stmt = (
+            select(DerivedFeature)
+            .where(DerivedFeature.station_id == station_id)
+            .order_by(
+                DerivedFeature.timestamp.desc(),
+                DerivedFeature.feature_id.desc(),
+            )
+            .limit(1)
+        )
+        return self.db.execute(stmt).scalar_one_or_none()
+ 
+    def list_latest_by_area(self, area_id: int) -> list[DerivedFeature]:
+        sql = text("""
+            SELECT DISTINCT ON (df.station_id)
+                df.*
+            FROM derived_features df
+            JOIN stations st ON st.station_id = df.station_id
+            WHERE st.area_id = :area_id
+              AND st.status  = 'active'
+            ORDER BY df.station_id, df.timestamp DESC, df.feature_id DESC
+        """)
+        rows = self.db.execute(sql, {"area_id": area_id}).fetchall()
+        return [
+            self.db.get(DerivedFeature, (row.feature_id, row.timestamp))
+            for row in rows
+        ]
