@@ -1,0 +1,113 @@
+import argparse
+import logging
+import time
+from datetime import datetime, timezone
+
+from sqlalchemy.orm import Session
+
+from app.core.enums import AlertEventType
+from app.db.models import DerivedFeature
+from app.db.repositories import AlertEventRepository, AlertStatusRepository, DerivedFeatureRepository, StationRepository
+
+from app.db.session import SessionLocal
+from app.integrations.telegram import TelegramAlertNotifier
+from app.services.alert.alert_rules import assess
+
+log = logging.getLogger(__name__)
+
+AREA_ID_HANOI = 4
+
+_LEVEL_NAMES = {1: "Binh thuong", 2: "Theo doi", 3: "Canh bao", 4: "Nguy hiem", 5: "Rat nguy hiem",}
+
+def _process_station(db: Session, feat: DerivedFeature, station_name: str) -> None:
+    event_repo  = AlertEventRepository(db)
+    status_repo = AlertStatusRepository(db)
+
+    result        = assess(feat)
+    current_level = status_repo.get_current_alert_level(feat.station_id)
+
+    # Xac dinh loai event
+    if current_level is None:
+        event_type = AlertEventType.CREATED
+    elif result.alert_level > current_level:
+        event_type = AlertEventType.UPGRADED
+    elif result.alert_level < current_level:
+        event_type = AlertEventType.RESOLVED if result.alert_level == 1 else AlertEventType.DOWNGRADED
+    else:
+        log.info("station=%s level=%d unchanged", station_name, result.alert_level)
+        return
+
+    log.info(
+        "station=%s level=%d risk=%.2f %s",
+        station_name, result.alert_level, result.risk_score, event_type.value,
+    )
+
+    rules_str = ("\n  - " + "\n  - ".join(result.violated_rules)) if result.violated_rules else "Khong co vi pham"
+    message   = (
+        f"[{event_type.value.upper()}] Muc {result.alert_level} — {_LEVEL_NAMES[result.alert_level]}\n"
+        f"Risk score: {result.risk_score:.2%}\n"
+        f"Vi pham nguong:{rules_str}"
+    )
+    now     = datetime.now(tz=timezone.utc)
+    next_id = event_repo.get_max_event_id() + 1
+
+    try:
+        event = event_repo.create(
+            event_id=next_id, timestamp=now,
+            area_id=feat.area_id, station_id=feat.station_id,
+            alert_level=result.alert_level, risk_score=result.risk_score,
+            trigger_feature_id=feat.feature_id, trigger_feature_timestamp=feat.timestamp,
+            alert_message=message, event_type=event_type.value,
+        )
+        status_repo.upsert(station_id=feat.station_id, event_id=next_id, event_timestamp=now)
+        db.commit()
+        log.info("event_id=%d created", next_id)
+    except Exception:
+        db.rollback()
+        log.exception("Failed to create event for station_id=%d", feat.station_id)
+        return
+
+    # Gui Telegram qua notifier 
+    result_tg = TelegramAlertNotifier(db).send_single_event(event)
+    if not result_tg.ok:
+        log.error("Telegram failed — station_id=%d: %s", feat.station_id, result_tg.error_message)
+
+
+def run_once() -> None:
+    db: Session = SessionLocal()
+    try:
+        features = DerivedFeatureRepository(db).list_latest_by_area(AREA_ID_HANOI)
+        if not features:
+            log.warning("Khong co derived_features cho area_id=%d", AREA_ID_HANOI)
+            return
+
+        for feat in features:
+            station = StationRepository(db).get_by_id(feat.station_id)
+            if not station:
+                log.warning("Khong tim thay station_id=%d", feat.station_id)
+                continue
+            try:
+                _process_station(db, feat, station.station_name)
+            except Exception:
+                log.exception("Unexpected error — station_id=%d skipped", feat.station_id)
+    finally:
+        db.close()
+
+
+def run_realtime(interval: int = 60) -> None:
+    log.info("Alert pipeline realtime interval=%ds — Ctrl+C de dung", interval)
+    while True:
+        try:
+            run_once()
+        except Exception:
+            log.exception("Pipeline error — retry next interval")
+        time.sleep(interval)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--realtime", action="store_true")
+    parser.add_argument("--interval", type=int, default=60)
+    args = parser.parse_args()
+    run_realtime(args.interval) if args.realtime else run_once()
