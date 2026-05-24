@@ -25,6 +25,8 @@ with DAG(
         task_id="dbt_snapshot",
         bash_command=(
             "cd /opt/airflow/landslide_dbt && "
+            "dbt clean && "
+            "dbt deps && "
             "dbt snapshot --profiles-dir /home/airflow/.dbt"
         ),
     )
