@@ -4,8 +4,10 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.enums import UserRole
+from app.db.models import DerivedFeature
 from app.db.repositories import DerivedFeatureRepository
 from app.permissions.station_scope import ensure_station_scope
+from app.schemas.derived_feature import DerivedFeatureCreate
 
 
 class DerivedFeatureService:
@@ -54,3 +56,13 @@ class DerivedFeatureService:
         # Đảm bảo current user có quyền hạn với bản ghi này
         ensure_station_scope(current_user, feature.station_id)
         return feature
+
+    def upsert_derived_feature(self, payload: DerivedFeatureCreate) -> DerivedFeature:
+        try:
+            feature = self.derived_feature_repo.upsert(payload)
+            self.db.commit()
+            self.db.refresh(feature)
+            return feature
+        except Exception:
+            self.db.rollback()
+            raise

@@ -7,6 +7,6 @@ from app.schemas.sensor_type import SensorTypeCreate, SensorTypeUpdate, SensorTy
 from app.schemas.alert_level import AlertLevelCreate, AlertLevelUpdate, AlertLevelResponse
 from app.schemas.sensor import SensorCreate, SensorUpdate, SensorStatusUpdate, SensorResponse
 from app.schemas.sensor_reading import SensorReadingResponse
-from app.schemas.derived_feature import DerivedFeatureResponse
+from app.schemas.derived_feature import DerivedFeatureCreate, DerivedFeatureUpdate, DerivedFeatureResponse
 from app.schemas.alert_event import AlertEventResponse
 from app.schemas.alert_status import AlertStatusResponse, AlertStatusDetailResponse
