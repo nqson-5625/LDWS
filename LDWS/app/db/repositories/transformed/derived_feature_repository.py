@@ -76,6 +76,7 @@ class DerivedFeatureRepository:
         self.db.flush()
         return existing
 
+    # Lấy đặc trưng dẫn xuất mới nhất của tất cả các trạm trong một khu vực
     def list_latest_by_area(self, area_id: int) -> list[DerivedFeature]:
         sql = text("""
             SELECT DISTINCT ON (df.station_id)

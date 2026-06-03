@@ -3,6 +3,7 @@ import logging
 import time
 from datetime import datetime, timezone
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.enums import AlertEventType
@@ -19,14 +20,30 @@ AREA_ID_HANOI = 4
 
 _LEVEL_NAMES = {1: "Binh thuong", 2: "Theo doi", 3: "Canh bao", 4: "Nguy hiem", 5: "Rat nguy hiem",}
 
+# Xử lý một trạm: đánh giá mức cảnh báo, tạo event nếu có thay đổi và gửi thông báo
 def _process_station(db: Session, feat: DerivedFeature, station_name: str) -> None:
     event_repo  = AlertEventRepository(db)
     status_repo = AlertStatusRepository(db)
+    derived_repo = DerivedFeatureRepository(db)
 
     result        = assess(feat)
     current_level = status_repo.get_current_alert_level(feat.station_id)
 
-    # Xac dinh loai event
+    # Giả lập anomaly_score và anomaly_flag
+    feat.anomaly_score = 0.0
+    feat.anomaly_flag = False
+    feat.risk_score = result.risk_score
+    feat.alert_level_candidate = result.alert_level
+
+    # Lưu dữ liệu xuống bảng DERIVED_FEATURES
+    try:
+        derived_repo.upsert_derived_feature(feat)
+        db.commit()
+    except Exception:
+        db.rollback()
+        log.exception("Failed to upsert derived feature for station_id=%d", feat.station_id)
+
+    # Xac dinh loai event: CREATED, UPGRADED, DOWNGRADED, RESOLVED
     if current_level is None:
         event_type = AlertEventType.CREATED
     elif result.alert_level > current_level:
@@ -67,16 +84,53 @@ def _process_station(db: Session, feat: DerivedFeature, station_name: str) -> No
         log.exception("Failed to create event for station_id=%d", feat.station_id)
         return
 
-    # Gui Telegram qua notifier 
+    # Gửi Telegram qua notifier 
     result_tg = TelegramAlertNotifier(db).send_single_event(event)
     if not result_tg.ok:
         log.error("Telegram failed — station_id=%d: %s", feat.station_id, result_tg.error_message)
 
 
+# Chạy pipeline một lần: lấy đặc trưng dẫn xuất mới nhất của tất cả các trạm trong khu vực, đánh giá và tạo event nếu cần
 def run_once() -> None:
     db: Session = SessionLocal()
     try:
-        features = DerivedFeatureRepository(db).list_latest_by_area(AREA_ID_HANOI)
+        # Truy vấn trực tiếp từ view
+        query = text("""
+            SELECT * FROM vw_derived_features 
+            WHERE "timestamp" >= NOW() - INTERVAL '2 minutes'
+            AND area_id = :area_id;
+        """)
+        result = db.execute(query, {"area_id": AREA_ID_HANOI})
+        
+        # Ánh xạ dữ liệu động từ View thành các Object model để tái sử dụng toàn diện Rule Engine
+        features = []
+        for index, row in enumerate(result.mappings()):
+            feat = DerivedFeature(
+                feature_id=index + 1,  # Khởi tạo ID tạm thời cho luồng xử lý bộ nhớ
+                timestamp=row["timestamp"],
+                area_id=row["area_id"],
+                station_id=row["station_id"],
+
+                rain_1h=row["rain_1h"], rain_3h=row["rain_3h"], 
+                rain_24h=row["rain_24h"], rain_3d=row["rain_3d"],
+                rain_intensity=row["rain_intensity"],
+
+                tilt_value=row["tilt_value"], tilt_rate=row["tilt_rate"],
+                tilt_change_1h=row["tilt_rate"],  
+                tilt_change_24h=row["tilt_change_24h"],
+
+                disp_value=row["disp_value"], disp_rate=row["disp_rate"],
+                disp_change_1h=row["disp_rate"],
+                disp_change_24h=row["disp_change_24h"],
+
+                vibration_value=row["vibration_value"],
+                vibration_peak=row["vibration_peak"],
+                vibration_flag=row["vibration_flag"],
+
+                temperature_value=row["temperature_value"],
+                temperature_flag=row["temperature_flag"]
+            )
+            features.append(feat)
         if not features:
             log.warning("Khong co derived_features cho area_id=%d", AREA_ID_HANOI)
             return
@@ -94,6 +148,7 @@ def run_once() -> None:
         db.close()
 
 
+# Chạy pipeline liên tục theo khoảng thời gian định sẵn (mặc định 60s)
 def run_realtime(interval: int = 60) -> None:
     log.info("Alert pipeline realtime interval=%ds — Ctrl+C de dung", interval)
     while True:

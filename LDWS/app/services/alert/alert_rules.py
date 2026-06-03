@@ -16,32 +16,35 @@ THRESHOLDS: dict[str, list[float]] = {
     "vibration_peak":  [0.05,  0.1,   0.2,   0.5],   # g
 }
 
-# Signed metrics: nguong nguy hiem la do lon, khong phu thuoc chieu
-_SIGNED = frozenset({
+# Signed metrics: ngưỡng nguy hiểm là độ lớn, không phụ thuộc chiều
+_SIGNED = frozenset({ 
+    # Các chỉ số có giá trị là số dương hoặc âm
     "tilt_value", "tilt_rate", "tilt_change_24h",
     "disp_value", "disp_rate", "disp_change_24h",
 })
 
-# Trong so nhom (tong = 1.0)
-# Mua + dich chuyen la yeu to chinh gay sat lo tai Ha Noi
+# Trọng số nhóm (tong = 1.0)
+# Mưa + dịch chuyển là yếu tố chính gây sạt lở tại Ha Noi
 WEIGHTS = {"rain": 0.35, "tilt": 0.25, "disp": 0.30, "vibration": 0.10}
 
 
 class AssessmentResult(NamedTuple):
     alert_level:    int        # 1-5
     risk_score:     float      # 0.0-1.0
-    violated_rules: list[str]
+    violated_rules: list[str] 
 
-
+# Hàm đánh giá quy tắc: trả về mức cảnh báo và các quy tắc bị vi phạm để giải thích
 def _level(metric: str, value: float) -> int:
     # Tra ve muc canh bao 1-5 cho 1 gia tri
-    v = abs(value) if metric in _SIGNED else value
+    v = abs(value) if metric in _SIGNED else value 
+
+    # So sánh với tùng ngưỡng, trả về mức cao nhất
     for lv, t in zip([2, 3, 4, 5], THRESHOLDS[metric]):
         if v < t:
             return lv - 1
     return 5
 
-
+# Hàm chuẩn hóa giá trị về khoảng [0.0, 1.0] theo ngưỡng level 5 để tính điểm rủi ro
 def _norm(metric: str, value: float | None) -> float:
     # Chuan hoa ve [0, 1] theo nguong level 5
     if value is None:
@@ -49,15 +52,20 @@ def _norm(metric: str, value: float | None) -> float:
     v = abs(value) if metric in _SIGNED else value
     return min(v / THRESHOLDS[metric][-1], 1.0)
 
-
+# Hàm đánh giá toàn diện: kết hợp quy tắc và tính điểm rủi ro
 def rule_engine(feat: DerivedFeature) -> tuple[int, list[str]]:
     # Kiem tra tung chi so theo nguong cung, lay muc cao nhat
     checks = {
-        "rain_1h":        feat.rain_1h,        "rain_3h":        feat.rain_3h,
-        "rain_24h":       feat.rain_24h,        "rain_3d":        feat.rain_3d,
-        "tilt_value":     feat.tilt_value,      "tilt_rate":      feat.tilt_rate,
-        "tilt_change_24h":feat.tilt_change_24h, "disp_value":     feat.disp_value,
-        "disp_rate":      feat.disp_rate,       "disp_change_24h":feat.disp_change_24h,
+        "rain_1h":        feat.rain_1h,         
+        "rain_3h":        feat.rain_3h,
+        "rain_24h":       feat.rain_24h,        
+        "rain_3d":        feat.rain_3d,
+        "tilt_value":     feat.tilt_value,      
+        "tilt_rate":      feat.tilt_rate,
+        "tilt_change_24h":feat.tilt_change_24h, 
+        "disp_value":     feat.disp_value,
+        "disp_rate":      feat.disp_rate,       
+        "disp_change_24h":feat.disp_change_24h,
         "vibration_peak": feat.vibration_peak,
     }
     max_level, violated = 1, []
@@ -76,7 +84,7 @@ def rule_engine(feat: DerivedFeature) -> tuple[int, list[str]]:
 
     return max_level, violated
 
-
+# Hàm tính điểm rủi ro tổng hợp từ các chỉ số, chuẩn hóa và trọng số
 def risk_scorer(feat: DerivedFeature) -> float:
     # Tinh risk_score [0.0, 1.0] theo trong so nhom
     rain = (_norm("rain_1h",  feat.rain_1h)  * 0.40 + _norm("rain_3h",  feat.rain_3h)  * 0.20
@@ -94,7 +102,7 @@ def risk_scorer(feat: DerivedFeature) -> float:
         disp * WEIGHTS["disp"] + vib  * WEIGHTS["vibration"], 1.0
     ), 4)
 
-
+# Hàm đánh giá tổng hợp: trả về mức cảnh báo và điểm rủi ro, cùng với giải thích các quy tắc bị vi phạm
 def assess(feat: DerivedFeature) -> AssessmentResult:
     alert_level, violated_rules = rule_engine(feat)
     return AssessmentResult(alert_level, risk_scorer(feat), violated_rules)
