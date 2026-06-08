@@ -45,13 +45,13 @@ SELECT
     
     -- Các đặc trưng góc nghiêng
     tilt_max_abs AS tilt_value,
-    (tilt_val - LAG(tilt_val, 60) OVER (PARTITION BY station_id ORDER BY bucket)) AS tilt_rate,
-    (tilt_val - LAG(tilt_val, 1440) OVER (PARTITION BY station_id ORDER BY bucket)) AS tilt_change_24h,
+    COALESCE(tilt_val - LAG(tilt_val, 60) OVER (PARTITION BY station_id ORDER BY bucket), 0) AS tilt_rate,
+    COALESCE(tilt_val - LAG(tilt_val, 1440) OVER (PARTITION BY station_id ORDER BY bucket), 0) AS tilt_change_24h,
     
     -- Các đặc trưng dịch chuyển khối đất
     disp_val AS disp_value,
-    (disp_val - LAG(disp_val, 60) OVER (PARTITION BY station_id ORDER BY bucket)) AS disp_rate,
-    (disp_val - LAG(disp_val, 1440) OVER (PARTITION BY station_id ORDER BY bucket)) AS disp_change_24h,
+    COALESCE(disp_val - LAG(disp_val, 60) OVER (PARTITION BY station_id ORDER BY bucket), 0) AS disp_rate,
+    COALESCE(disp_val - LAG(disp_val, 1440) OVER (PARTITION BY station_id ORDER BY bucket), 0) AS disp_change_24h,
     
     -- Rung động và nhiệt độ
     vib_avg AS vibration_value,

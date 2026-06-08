@@ -221,7 +221,7 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     p.add_argument(
-        "--interval-seconds", type=int, default=60,
+        "--interval-seconds", type=int, default=2,
         help="Khoảng cách giữa 2 lần ghi (giây)",
     )
     p.add_argument(
