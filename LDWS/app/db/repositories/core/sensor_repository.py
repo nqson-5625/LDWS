@@ -25,6 +25,11 @@ class SensorRepository:
         stmt = select(Sensor).order_by(Sensor.sensor_id.asc())
         return list(self.db.execute(stmt).scalars().all())
     
+    # Lấy danh sách tất cả Sensor đang hoạt động (active)
+    def list_active(self) -> list[Sensor]:
+        stmt = select(Sensor).where(Sensor.status == 'active').order_by(Sensor.sensor_id.asc())
+        return list(self.db.execute(stmt).scalars().all())
+    
     # Lấy danh sách Sensor theo trạm
     def list_by_station(self, station_id: int) -> list[Sensor]:
         stmt = select(Sensor).where(Sensor.station_id == station_id).order_by(Sensor.sensor_id.asc())

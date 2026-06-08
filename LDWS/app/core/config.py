@@ -66,6 +66,10 @@ class Settings(BaseSettings): # class Settings kế thừa từ BaseSettings -> 
     snowflake_db: str | None = None
     snowflake_schema: str | None = None
 
+    # MQTT Settings
+    mqtt_broker: str | None = None
+    mqtt_port: int | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

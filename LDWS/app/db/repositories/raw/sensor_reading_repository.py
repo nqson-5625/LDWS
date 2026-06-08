@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, insert
 from sqlalchemy.orm import Session
 
 from app.db.models import SensorReading
@@ -103,17 +103,12 @@ class SensorReadingRepository:
     def bulk_insert(self, rows: list[dict]) -> int:
         if not rows:
             return 0
-        
-        # Chuyển list[dict] => list[object]
-        objects = []
-        for row in rows:
-            obj = SensorReading(**row) # **row: giải nén dict
-            objects.append(obj)
-
+    
         try:
-            self.db.add_all(objects)
+            stmt = insert(SensorReading)
+            self.db.execute(stmt, rows)
             self.db.commit()
-            return len(objects)
+            return len(rows)
         except Exception:
             self.db.rollback()
             raise
