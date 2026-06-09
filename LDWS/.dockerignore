@@ -1,0 +1,23 @@
+# Bỏ qua môi trường ảo (giảm hàng trăm MB build context)
+.venv/
+venv/
+env/
+
+# Bỏ qua thư mục logs gây ra lỗi
+docker/logs/
+
+# Bỏ qua dữ liệu của DB và các tool khác
+postgres_data/
+airflow_postgres_data/
+grafana_data/
+docker/minio/data/
+
+# Bỏ qua file thực thi Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Bỏ qua Git và Env
+.git/
+.env

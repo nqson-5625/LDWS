@@ -112,6 +112,39 @@ services:
     volumes:
       - ./docker/minio/data:/data
 
+  # MQTT BROKER 
+  mqtt_broker:
+    image: emqx:latest
+    container_name: ldws_mqtt_broker
+    restart: always
+    ports:
+      - "1883:1883"    # MQTT TCP Port
+      - "18083:18083"  # EMQX Dashboard
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MQTT WORKER 
+  mqtt_worker:
+    build:
+      context: . 
+      dockerfile: dockerfile-python.dockerfile
+    container_name: ldws_mqtt_worker
+    command: uv run python consumer/mqtt_to_db.py
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - MQTT_BROKER=mqtt_broker
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      mqtt_broker:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   # Orchestration (Airflow)
   airflow-postgres:
     image: postgres:15
@@ -234,8 +267,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy

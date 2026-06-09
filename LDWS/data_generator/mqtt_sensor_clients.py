@@ -24,26 +24,26 @@ log = logging.getLogger(__name__)
 # DANH SÁCH 18 SENSORS 
 SENSORS_CONFIG = [
     # NOIBAI INTL station
-    {"area_id": 4, "station_id": 1, "type_code": "rain", "sensor_code": "HN-NBI-RAIN-01"},
-    {"area_id": 4, "station_id": 1, "type_code": "tilt", "sensor_code": "HN-NBI-TILT-01"},
-    {"area_id": 4, "station_id": 1, "type_code": "tilt", "sensor_code": "HN-NBI-TILT-02"},
-    {"area_id": 4, "station_id": 1, "type_code": "vibration", "sensor_code": "HN-NBI-VIB-01"},
-    {"area_id": 4, "station_id": 1, "type_code": "vibration", "sensor_code": "HN-NBI-VIB-02"},
-    {"area_id": 4, "station_id": 1, "type_code": "displacement", "sensor_code": "HN-NBI-DISP-01"},
-    {"area_id": 4, "station_id": 1, "type_code": "displacement", "sensor_code": "HN-NBI-DISP-02"},
-    {"area_id": 4, "station_id": 1, "type_code": "displacement", "sensor_code": "HN-NBI-DISP-03"},
-    {"area_id": 4, "station_id": 1, "type_code": "temperature", "sensor_code": "HN-NBI-TEMP-01"},
+    {"area_id": 4, "station_id": 4, "type_code": "rain", "sensor_code": "HN-NBI-RAIN-01"},
+    {"area_id": 4, "station_id": 4, "type_code": "tilt", "sensor_code": "HN-NBI-TILT-01"},
+    {"area_id": 4, "station_id": 4, "type_code": "tilt", "sensor_code": "HN-NBI-TILT-02"},
+    {"area_id": 4, "station_id": 4, "type_code": "vibration", "sensor_code": "HN-NBI-VIB-01"},
+    {"area_id": 4, "station_id": 4, "type_code": "vibration", "sensor_code": "HN-NBI-VIB-02"},
+    {"area_id": 4, "station_id": 4, "type_code": "displacement", "sensor_code": "HN-NBI-DISP-01"},
+    {"area_id": 4, "station_id": 4, "type_code": "displacement", "sensor_code": "HN-NBI-DISP-02"},
+    {"area_id": 4, "station_id": 4, "type_code": "displacement", "sensor_code": "HN-NBI-DISP-03"},
+    {"area_id": 4, "station_id": 4, "type_code": "temperature", "sensor_code": "HN-NBI-TEMP-01"},
     
     # HA DONG station
-    {"area_id": 4, "station_id": 2, "type_code": "rain", "sensor_code": "HN-HDG-RAIN-01"},
-    {"area_id": 4, "station_id": 2, "type_code": "tilt", "sensor_code": "HN-HDG-TILT-01"},
-    {"area_id": 4, "station_id": 2, "type_code": "tilt", "sensor_code": "HN-HDG-TILT-02"},
-    {"area_id": 4, "station_id": 2, "type_code": "vibration", "sensor_code": "HN-HDG-VIB-01"},
-    {"area_id": 4, "station_id": 2, "type_code": "vibration", "sensor_code": "HN-HDG-VIB-02"},
-    {"area_id": 4, "station_id": 2, "type_code": "displacement", "sensor_code": "HN-HDG-DISP-01"},
-    {"area_id": 4, "station_id": 2, "type_code": "displacement", "sensor_code": "HN-HDG-DISP-02"},
-    {"area_id": 4, "station_id": 2, "type_code": "displacement", "sensor_code": "HN-HDG-DISP-03"},
-    {"area_id": 4, "station_id": 2, "type_code": "temperature", "sensor_code": "HN-HDG-TEMP-01"},
+    {"area_id": 4, "station_id": 5, "type_code": "rain", "sensor_code": "HN-HDG-RAIN-01"},
+    {"area_id": 4, "station_id": 5, "type_code": "tilt", "sensor_code": "HN-HDG-TILT-01"},
+    {"area_id": 4, "station_id": 5, "type_code": "tilt", "sensor_code": "HN-HDG-TILT-02"},
+    {"area_id": 4, "station_id": 5, "type_code": "vibration", "sensor_code": "HN-HDG-VIB-01"},
+    {"area_id": 4, "station_id": 5, "type_code": "vibration", "sensor_code": "HN-HDG-VIB-02"},
+    {"area_id": 4, "station_id": 5, "type_code": "displacement", "sensor_code": "HN-HDG-DISP-01"},
+    {"area_id": 4, "station_id": 5, "type_code": "displacement", "sensor_code": "HN-HDG-DISP-02"},
+    {"area_id": 4, "station_id": 5, "type_code": "displacement", "sensor_code": "HN-HDG-DISP-03"},
+    {"area_id": 4, "station_id": 5, "type_code": "temperature", "sensor_code": "HN-HDG-TEMP-01"},
 ]
 
 
@@ -123,7 +123,7 @@ class SensorMQTTClient(threading.Thread):
         self.generator = SensorDataGenerator(config["sensor_code"])
         
         # Tạo Client ID duy nhất
-        self.client = mqtt.Client(client_id=f"client_{config['sensor_code']}")
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id=f"client_{config['sensor_code']}")
         self.client.on_connect = self.on_connect
         
         # Định nghĩa MQTT Topic

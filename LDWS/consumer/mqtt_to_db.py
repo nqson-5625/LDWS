@@ -164,7 +164,7 @@ if __name__ == "__main__":
     writer_thread.start()
 
     # Thiết lập MQTT Consumer
-    mqtt_client = mqtt.Client(client_id="LDWS_Database_Writer")
+    mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id="LDWS_Database_Writer")
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_mqtt_message
 
