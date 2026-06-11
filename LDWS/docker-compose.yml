@@ -112,6 +112,22 @@ services:
     volumes:
       - ./docker/minio/data:/data
 
+  # KAFKA TO MINIO WORKER 
+  kafka_worker:
+    build:
+      context: . 
+      dockerfile: dockerfile-python.dockerfile
+    container_name: ldws_kafka_worker
+    command: uv run python consumer/kafka_to_minio.py
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
   # MQTT BROKER 
   mqtt_broker:
     image: emqx:latest
@@ -124,7 +140,8 @@ services:
       test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 5 
+      start_period: 30s
 
   # MQTT WORKER 
   mqtt_worker:
@@ -142,6 +159,22 @@ services:
     depends_on:
       mqtt_broker:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # ALERT PIPELINE WORKER 
+  alert_worker:
+    build:
+      context: . 
+      dockerfile: dockerfile-python.dockerfile
+    container_name: ldws_alert_worker
+    command: uv run python -m app.services.alert.alert_pipeline --realtime --interval 60
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
       postgres:
         condition: service_healthy
 

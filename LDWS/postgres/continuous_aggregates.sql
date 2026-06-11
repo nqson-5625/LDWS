@@ -66,5 +66,3 @@ WINDOW
     w_3h  AS (PARTITION BY station_id ORDER BY bucket RANGE BETWEEN INTERVAL '3 hours' PRECEDING AND CURRENT ROW),
     w_24h AS (PARTITION BY station_id ORDER BY bucket RANGE BETWEEN INTERVAL '24 hours' PRECEDING AND CURRENT ROW),
     w_3d  AS (PARTITION BY station_id ORDER BY bucket RANGE BETWEEN INTERVAL '3 days' PRECEDING AND CURRENT ROW);
-
--- tôi đã viết thêm file postgres/continuous_aggregates.sql và cập nhật file app/services/alert/alert_pipeline.py với mục đích thay thế hoàn toàn docker/dags/feature_pipeline_dag.py, bạn hãy kiểm tra xem tôi đã thực hiện chính xác chưa và đã có thể xóa hoàn toàn file docker/dags/feature_pipeline_dag.py hay chưa, nếu được rồi thì bạn hãy đăng ký dịch vụ chạy realtime hoàn chỉnh cho app.services.alert.alert_pipeline vào Docker Compose, hướng dẫn tôi cách để migration file postgres/continuous_aggregates.sql, nếu có lỗi thì hãy chỉ ra và sửa lỗi giúp tôi
