@@ -96,9 +96,10 @@ def run_once() -> None:
     try:
         # Truy vấn trực tiếp từ view
         query = text("""
-            SELECT * FROM vw_derived_features 
-            WHERE "timestamp" >= NOW() - INTERVAL '2 minutes'
+            SELECT DISTINCT ON (station_id) * FROM vw_derived_features 
+            WHERE "timestamp" >= NOW() - INTERVAL '10 minutes'
             AND area_id = :area_id;
+            ORDER BY station_id, "timestamp" DESC
         """)
         result = db.execute(query, {"area_id": AREA_ID_HANOI})
         
