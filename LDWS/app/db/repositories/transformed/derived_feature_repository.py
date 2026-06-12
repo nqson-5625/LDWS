@@ -63,18 +63,9 @@ class DerivedFeatureRepository:
         return self.db.execute(stmt).scalar_one_or_none()
  
     def upsert(self, derived_feature: DerivedFeatureCreate) -> DerivedFeature:
-        existing = self.get_by_pk(derived_feature.feature_id, derived_feature.timestamp)
-        if existing:
-            # model_dump(): chuyển Pydantic model thành dict, exclude: loại bỏ các trường không cần cập nhật
-            update_fields = derived_feature.model_dump(exclude={"feature_id", "timestamp"}) 
-            for field, value in update_fields.items():
-                setattr(existing, field, value) # Thiết lập lại giá trị cho các trường cần cập nhật
-            self.db.add(existing) # Đánh dấu object đã thay đổi để SQLAlchemy tự động sinh câu UPDATE khi flush/commit
-        else:
-            existing = DerivedFeature(**derived_feature.model_dump()) # **: giải nén dict thành các tham số khi khởi tạo object
-            self.db.add(existing)
+        merged_feature = self.db.merge(derived_feature)
         self.db.flush()
-        return existing
+        return merged_feature
 
     # Lấy đặc trưng dẫn xuất mới nhất của tất cả các trạm trong một khu vực
     def list_latest_by_area(self, area_id: int) -> list[DerivedFeature]:

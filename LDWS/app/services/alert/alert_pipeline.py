@@ -37,7 +37,7 @@ def _process_station(db: Session, feat: DerivedFeature, station_name: str) -> No
 
     # Lưu dữ liệu xuống bảng DERIVED_FEATURES
     try:
-        derived_repo.upsert_derived_feature(feat)
+        derived_repo.upsert(feat)
         db.commit()
     except Exception:
         db.rollback()
@@ -98,8 +98,8 @@ def run_once() -> None:
         query = text("""
             SELECT DISTINCT ON (station_id) * FROM vw_derived_features 
             WHERE "timestamp" >= NOW() - INTERVAL '10 minutes'
-            AND area_id = :area_id;
-            ORDER BY station_id, "timestamp" DESC
+            AND area_id = :area_id
+            ORDER BY station_id, "timestamp" DESC;
         """)
         result = db.execute(query, {"area_id": AREA_ID_HANOI})
         
