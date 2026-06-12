@@ -11,6 +11,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      TZ: Asia/Ho_Chi_Minh
     ports:
       - "5432:5432"
     volumes:
@@ -34,6 +35,7 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      TZ: Asia/Ho_Chi_Minh
     ports:
       - "2181:2181"
     healthcheck:
@@ -63,6 +65,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      TZ: Asia/Ho_Chi_Minh
     healthcheck:
       test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/9092'"]
       interval: 15s
@@ -91,6 +94,7 @@ services:
       VALUE_CONVERTER_SCHEMAS_ENABLE: 'false'
       KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      TZ: Asia/Ho_Chi_Minh
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8083/ || exit 1"]
       interval: 15s
@@ -106,6 +110,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      TZ: Asia/Ho_Chi_Minh
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -120,6 +125,8 @@ services:
     container_name: ldws_kafka_worker
     command: uv run python consumer/kafka_to_minio.py
     restart: always
+    environment:
+      TZ: Asia/Ho_Chi_Minh
     env_file:
       - .env
     depends_on:
@@ -133,6 +140,8 @@ services:
     image: emqx:latest
     container_name: ldws_mqtt_broker
     restart: always
+    environment:
+      TZ: Asia/Ho_Chi_Minh
     ports:
       - "1883:1883"    # MQTT TCP Port
       - "18083:18083"  # EMQX Dashboard
@@ -154,12 +163,30 @@ services:
     env_file:
       - .env
     environment:
+      - TZ=Asia/Ho_Chi_Minh
       - MQTT_BROKER=mqtt_broker
       - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     depends_on:
       mqtt_broker:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+
+  # SENSOR DATA SIMULATOR WORKER
+  sensor_simulator:
+    build:
+      context: . 
+      dockerfile: dockerfile-python.dockerfile
+    container_name: ldws_sensor_simulator
+    command: uv run python -m data_generator.mqtt_sensor_clients
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - MQTT_BROKER=mqtt_broker
+    depends_on:
+      mqtt_broker:
         condition: service_healthy
 
   # ALERT PIPELINE WORKER 
@@ -173,6 +200,7 @@ services:
     env_file:
       - .env
     environment:
+      - TZ=Asia/Ho_Chi_Minh
       - PYTHONPATH=/app
       - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     depends_on:
@@ -188,6 +216,7 @@ services:
       POSTGRES_USER: ${AIRFLOW_DB_USER}
       POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD}
       POSTGRES_DB: ${AIRFLOW_DB_NAME}
+      TZ: Asia/Ho_Chi_Minh
     volumes:
       - airflow_postgres_data:/var/lib/postgresql/data
     ports:
@@ -207,6 +236,7 @@ services:
       airflow-postgres:
         condition: service_healthy
     environment:
+      - TZ=Asia/Ho_Chi_Minh
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-postgres:5432/${AIRFLOW_DB_NAME}
     command: >
       bash -c "airflow db init &&
@@ -228,6 +258,7 @@ services:
       airflow-postgres:
         condition: service_healthy
     environment:
+      - TZ=Asia/Ho_Chi_Minh  
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-postgres:5432/${AIRFLOW_DB_NAME}
@@ -265,6 +296,7 @@ services:
       - airflow-scheduler
       - airflow-postgres
     environment:
+      - TZ=Asia/Ho_Chi_Minh
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-postgres:5432/${AIRFLOW_DB_NAME}
@@ -301,6 +333,7 @@ services:
     ports:
       - "3000:3000"
     environment:
+      - TZ=Asia/Ho_Chi_Minh
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     depends_on:
