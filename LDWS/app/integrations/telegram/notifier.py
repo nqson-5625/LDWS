@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
+from datetime import datetime, timezone
 
 from app.db.models import AlertEvent
 from app.db.repositories import AreaRepository, StationRepository, AlertEventRepository
@@ -89,6 +90,17 @@ class TelegramAlertNotifier:
                 event_id=event.event_id,
                 timestamp=event_key_ts,
             )
+
+            try:
+                self.alert_event_repo.mark_telegram_sent(
+                    event=event, 
+                    sent_at=datetime.now(tz=timezone.utc)
+                )
+                self.db.commit() 
+            except Exception as e:
+                self.db.rollback()
+                print(f"Failed to update database telegram_sent status: {e}")
+
             return NotificationResult(
                 ok=True,
                 event_id=event.event_id,
